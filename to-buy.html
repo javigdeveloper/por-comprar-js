@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🛒 Por Comprar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-800">
+
+  <!-- Navigation -->
+  <nav class="sticky top-0 z-40 bg-white flex justify-around text-base font-medium text-blue-800 border-b border-gray-200 py-5">
+    <a href="to-buy.html" class="transition-opacity opacity-100">🛒 Por Comprar</a>
+    <a href="bought.html" class="transition-opacity opacity-60 hover:opacity-80">✅ Comprados</a>
+    <a href="archived.html" class="transition-opacity opacity-60 hover:opacity-80">📦 Archivados</a>
+  </nav>
+
+  <main class="container mx-auto mt-4 px-5">
+
+    <!-- Add Item Form -->
+    <h1 class="sr-only">Por Comprar</h1>
+    <div id="add-item-form" class="sticky top-[4.1rem] bg-white z-20 border-b border-blue-300 px-3 py-2 mb-4 flex flex-col gap-2">
+      <div id="errors" class="hidden bg-red-100 border border-red-300 text-red-800 text-sm rounded px-3 py-2 mb-2"></div>
+      <div class="flex gap-2">
+        <input type="text" id="item-name" placeholder="Agregar artículo..." class="border border-blue-300 rounded px-3 py-2 w-full text-sm">
+        <button id="add-button" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Agregar</button>
+      </div>
+    </div>
+
+    <!-- To Buy List -->
+    <div id="to-buy-list">
+      <ul id="items-container" class="space-y-2"></ul>
+      <p id="empty-message" class="text-gray-500 text-sm hidden">No hay artículos en tu lista. ¡Agrega algo!</p>
+    </div>
+
+  </main>
+
+  <script>
+    const STORAGE_KEY = "shoppingItems";
+
+    function getItems() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    }
+
+    function saveItems(items) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function renderItems() {
+      const container = document.getElementById("items-container");
+      const emptyMessage = document.getElementById("empty-message");
+      container.innerHTML = "";
+      const items = getItems().filter(i => i.status === "to_buy");
+
+      if (items.length === 0) {
+        emptyMessage.classList.remove("hidden");
+        return;
+      } else {
+        emptyMessage.classList.add("hidden");
+      }
+
+      items.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "bg-gray-100 hover:bg-gray-200 transition p-3 rounded shadow-sm text-sm";
+
+        const button = document.createElement("button");
+        button.textContent = item.name;
+        button.className = "w-full text-left";
+        button.addEventListener("click", () => markAsBought(item.id));
+        li.appendChild(button);
+
+        container.appendChild(li);
+      });
+    }
+
+    function showErrors(messages) {
+      const errors = document.getElementById("errors");
+      if (!messages.length) {
+        errors.classList.add("hidden");
+        errors.innerHTML = "";
+        return;
+      }
+      errors.classList.remove("hidden");
+      errors.innerHTML = "<ul class='list-disc pl-5'>" + messages.map(m => `<li>${m}</li>`).join("") + "</ul>";
+    }
+
+    function validateItem(name) {
+      const trimmed = name.trim();
+      const errors = [];
+      if (!trimmed) errors.push("El artículo no puede estar vacío");
+      if (trimmed.length > 50) errors.push("El artículo es demasiado largo (máx. 50 caracteres)");
+
+      const items = getItems();
+      if (items.some(i => i.name.toLowerCase() === trimmed.toLowerCase())) {
+        errors.push("El artículo ya existe en esta u otra lista");
+      }
+      return errors;
+    }
+
+    function addItem() {
+      const input = document.getElementById("item-name");
+      const name = input.value;
+      const errors = validateItem(name);
+      showErrors(errors);
+      if (errors.length) return;
+
+      const items = getItems();
+      items.push({ id: Date.now(), name: name.trim(), status: "to_buy" });
+      saveItems(items);
+      input.value = "";
+      renderItems();
+    }
+
+    function markAsBought(id) {
+      const items = getItems();
+      const item = items.find(i => i.id === id);
+      if (item) {
+        item.status = "bought";
+        saveItems(items);
+        renderItems();
+      }
+    }
+
+    document.getElementById("add-button").addEventListener("click", addItem);
+    document.getElementById("item-name").addEventListener("keypress", e => {
+      if (e.key === "Enter") addItem();
+    });
+
+    renderItems();
+  </script>
+</body>
+</html>

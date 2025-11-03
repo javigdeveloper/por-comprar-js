@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✅ Comprados</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-800">
+
+  <!-- Navigation -->
+  <nav class="sticky top-0 z-40 bg-white flex justify-around text-base font-medium text-blue-800 border-b border-gray-200 py-5">
+    <a href="to-buy.html" class="transition-opacity opacity-60 hover:opacity-80">🛒 Por Comprar</a>
+    <a href="bought.html" class="transition-opacity opacity-100">✅ Comprados</a>
+    <a href="archived.html" class="transition-opacity opacity-60 hover:opacity-80">📦 Archivados</a>
+  </nav>
+
+  <main class="container mx-auto mt-4 px-5">
+
+    <h1 class="sr-only">Comprados</h1>
+
+    <form id="batch-form" class="space-y-2">
+
+      <div class="grid grid-cols-3 gap-4 font-semibold text-gray-700 text-sm px-1 py-2 mb-2 sticky top-[4.1rem] bg-white z-20 border-b border-blue-300">
+        <div>Producto</div>
+        <div class="text-center">Mover a Por Comprar</div>
+        <div class="text-center">Archivar</div>
+      </div>
+
+      <ul id="bought-items-container" class="space-y-2 mt-2 pb-24"></ul>
+
+      <div class="fixed bottom-0 left-0 w-full bg-white border-t border-blue-200 px-4 py-3 z-30">
+        <div class="flex justify-center">
+          <button type="submit" class="w-full max-w-xs bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow text-sm">
+            Mover productos
+          </button>
+        </div>
+      </div>
+
+    </form>
+
+    <p id="empty-message" class="text-gray-500 text-sm hidden">No hay artículos comprados.</p>
+
+  </main>
+
+  <script>
+    const STORAGE_KEY = "shoppingItems";
+
+    function getItems() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    }
+
+    function saveItems(items) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function renderItems() {
+      const container = document.getElementById("bought-items-container");
+      const emptyMessage = document.getElementById("empty-message");
+      container.innerHTML = "";
+      const items = getItems().filter(i => i.status === "bought");
+
+      if (items.length === 0) {
+        emptyMessage.classList.remove("hidden");
+        return;
+      } else {
+        emptyMessage.classList.add("hidden");
+      }
+
+      items.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "grid grid-cols-3 gap-4 items-center bg-gray-100 hover:bg-gray-200 transition p-3 rounded shadow-sm text-sm";
+
+        const span = document.createElement("span");
+        span.className = "truncate font-medium";
+        span.title = item.name;
+        span.textContent = item.name;
+        li.appendChild(span);
+
+        const moveDiv = document.createElement("div");
+        moveDiv.className = "flex justify-center";
+        const moveRadio = document.createElement("input");
+        moveRadio.type = "radio";
+        moveRadio.name = `updates[${item.id}]`;
+        moveRadio.value = "to_buy";
+        moveRadio.className = "w-5 h-5 text-blue-600";
+        moveDiv.appendChild(moveRadio);
+        li.appendChild(moveDiv);
+
+        const archiveDiv = document.createElement("div");
+        archiveDiv.className = "flex justify-center";
+        const archiveRadio = document.createElement("input");
+        archiveRadio.type = "radio";
+        archiveRadio.name = `updates[${item.id}]`;
+        archiveRadio.value = "archived";
+        archiveRadio.className = "w-5 h-5 text-red-600";
+        archiveDiv.appendChild(archiveRadio);
+        li.appendChild(archiveDiv);
+
+        container.appendChild(li);
+      });
+    }
+
+    document.getElementById("batch-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const items = getItems();
+      const formData = new FormData(this);
+
+      for (const [key, value] of formData.entries()) {
+        const id = parseInt(key.match(/\d+/)[0]);
+        const item = items.find(i => i.id === id);
+        if (item) {
+          item.status = value;
+        }
+      }
+
+      saveItems(items);
+      renderItems();
+    });
+
+    renderItems();
+  </script>
+
+</body>
+</html>
